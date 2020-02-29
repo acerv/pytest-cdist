@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
 """
-.. module:: setup
-    :platform: Multiplatform
-    :synopsis: installer module
-.. moduleauthor:: Andrea Cervesato <andrea.cervesato@mailbox.org>
+setuptools script.
+
+Author:
+    Andrea Cervesato <andrea.cervesato@mailbox.org>
 """
+
 from setuptools import setup, find_packages
 
 setup(
