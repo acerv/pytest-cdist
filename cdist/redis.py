@@ -26,12 +26,9 @@ class RedisExternalResource(ExternalResource):
         Args:
             hostname (str): Redis server hostname (default: localhost).
             port (int): Redis server port (default: 6379).
-            timeout (int): seconds to wait for locking if key is already locked
-                (default: 30).
         """
         self._hostname = kwargs.get("hostname", "localhost")
         self._port = int(kwargs.get("port", 6379))
-        self._timeout = int(kwargs.get("timeout", 30))
 
     def _connect(self):
         """
