@@ -2,10 +2,10 @@
 TODO
 ====
 
-- [ ] client class to read/write pytest configurations
+- [x] client class to read/write pytest configurations
 - [ ] cdist-cli command
 - [ ] pytest-cdist plugin
-- [ ] redis support
+- [x] redis support
 - [ ] redis client username/password support
 - [ ] redis client ssl keyfile support
 - [ ] "locked by" mechanism

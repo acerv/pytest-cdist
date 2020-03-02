@@ -139,10 +139,11 @@ class RedisExternalResource(ExternalResource):
 
     def keys(self) -> list:
         client = self._connect()
-        outdata = list()
+        data = list()
         try:
-            outdata = client.keys()
+            data = client.keys()
         except RedisError as err:
             raise ResourceConnectionError(err)
 
-        return outdata
+        filtered = [item for item in data if not data.endswith(".locking")]
+        return filtered
