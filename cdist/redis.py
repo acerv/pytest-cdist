@@ -42,7 +42,7 @@ class RedisExternalResource(ExternalResource):
         """
         Return the name used to recognize if a configuration is locked.
         """
-        return "%s.locking" % name
+        return "%s.lock" % name
 
     def _connect(self):
         """
@@ -65,6 +65,9 @@ class RedisExternalResource(ExternalResource):
 
         if config is None:
             raise ValueError("config is None")
+
+        if key.endswith(".lock"):
+            raise ValueError("key can't end with '.lock' suffix")
 
         client = self._connect()
         try:
@@ -145,5 +148,5 @@ class RedisExternalResource(ExternalResource):
         except RedisError as err:
             raise ResourceConnectionError(err)
 
-        filtered = [item for item in data if not data.endswith(".locking")]
+        filtered = [item for item in data if not data.endswith(".lock")]
         return filtered
