@@ -8,19 +8,17 @@ Author:
 import sys
 import configparser
 import click
-from cdist.redis import RedisExternalResource
-from cdist import ResourceError
+import cdist
+from cdist.resource import ResourceError
 
 
 class Arguments:
     """
     Default program arguments.
     """
+    # pylint: disable=too-few-public-methods
 
     def __init__(self):
-        self.rtype = None
-        self.hostname = None
-        self.port = None
         self.resource = None
 
 
@@ -54,24 +52,22 @@ def print_error(msg):
     type=click.INT,
     help="port of the resource server (default: 6379)")
 @pass_arguments
-def cdist(args, hostname, port, rtype):
+def cli(args, hostname, port, rtype):
     """
     cdist client for pytest distributed configuration.
     """
-    args.hostname = hostname
-    args.port = port
-    args.rtype = rtype
+    kwargs = dict(
+        hostname=hostname,
+        port=port
+    )
+    args.resource = cdist.get_resource(rtype, **kwargs)
 
-    if rtype == "redis":
-        args.resource = RedisExternalResource(
-            hostname=hostname,
-            port=port)
-    else:
+    if not rtype:
         print_error("ERROR: '%s' type not supported (yet)." % rtype)
         return
 
 
-@cdist.command()
+@cli.command()
 @click.argument("config_name", nargs=1)
 @click.argument("config_file", nargs=1)
 @pass_arguments
@@ -95,7 +91,7 @@ def push(args, config_name, config_file):
     click.secho("done", fg="green")
 
 
-@cdist.command()
+@cli.command()
 @click.argument("config_name", nargs=1)
 @pass_arguments
 def show(args, config_name):
@@ -122,7 +118,7 @@ def show(args, config_name):
         click.echo("%s = %s" % (key, value))
 
 
-@cdist.command()
+@cli.command()
 @click.argument("config_name", nargs=1)
 @pass_arguments
 def lock(args, config_name):
@@ -144,7 +140,7 @@ def lock(args, config_name):
         print_error("ERROR: %s." % err)
 
 
-@cdist.command()
+@cli.command()
 @click.argument("config_name", nargs=1)
 @pass_arguments
 def unlock(args, config_name):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-ExternalResource class implementation for Redis services.
+Redis resource implementation.
 
 The implemented lock mechanism is the historical way to use a ".lock"
 tag to the configuration key. For example, if a configuration is named
@@ -14,18 +14,18 @@ Author:
 from __future__ import absolute_import
 from redis import Redis
 from redis import RedisError
-from cdist import ExternalResource
-from cdist import ResourceConnectionError
-from cdist import ResourcePushError
-from cdist import ResourcePullError
-from cdist import ResourceLockError
-from cdist import ResourceUnlockError
-from cdist import ResourceNotExistError
+from cdist.resource import Resource
+from cdist.resource import ResourceConnectionError
+from cdist.resource import ResourcePushError
+from cdist.resource import ResourcePullError
+from cdist.resource import ResourceLockError
+from cdist.resource import ResourceUnlockError
+from cdist.resource import ResourceNotExistError
 
 
-class RedisExternalResource(ExternalResource):
+class RedisResource(Resource):
     """
-    ExternalResource implementation for Redis DB.
+    Redis recourse implementation.
     """
 
     def __init__(self, **kwargs: dict):
