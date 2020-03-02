@@ -39,7 +39,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'cdist-cli=cdist.command:client',
+            'cdist-cli=cdist.command:cdist',
         ],
     },
 )
