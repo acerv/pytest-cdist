@@ -6,14 +6,14 @@ Author:
     Andrea Cervesato <andrea.cervesato@mailbox.org>
 """
 from __future__ import absolute_import
+from redis import Redis
+from redis import RedisError
 from cdist import ExternalResource
 from cdist import ResourceConnectionError
 from cdist import ResourcePushError
 from cdist import ResourcePullError
 from cdist import ResourceLockError
 from cdist import ResourceUnlockError
-from redis import Redis
-from redis import RedisError
 
 
 class RedisExternalResource(ExternalResource):
@@ -82,7 +82,7 @@ class RedisExternalResource(ExternalResource):
 
         client = self._connect()
         try:
-            client.hadd(key, "cdist_locked", "1")
+            client.hset(key, "cdist_locked", "1")
         except RedisError as err:
             raise ResourceLockError(err)
 
@@ -92,6 +92,6 @@ class RedisExternalResource(ExternalResource):
 
         client = self._connect()
         try:
-            client.hadd(key, "cdist_locked", "0")
+            client.hset(key, "cdist_locked", "0")
         except RedisError as err:
             raise ResourceUnlockError(err)
