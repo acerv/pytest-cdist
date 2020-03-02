@@ -43,6 +43,12 @@ class ResourceUnlockError(ResourceError):
     """
 
 
+class ResourceNotExistError(ResourceError):
+    """
+    Raised when an external resource doesn't have a requested configuration.
+    """
+
+
 class ExternalResource:
     """
     A generic class to handle multiple pytest configurations via external
@@ -93,6 +99,7 @@ class ExternalResource:
             ValueError: if one of the parameters is None or empty.
             ResourceConnectionError: if connection failed.
             ResourceLockError: if lock failed.
+            ResourceNotExistError: if configuration doesn't exist.
         """
         raise NotImplementedError()
 
@@ -107,5 +114,35 @@ class ExternalResource:
             ValueError: if one of the parameters is None or empty.
             ResourceConnectionError: if connection failed.
             ResourceUnlockError: if unlock failed.
+            ResourceNotExistError: if configuration doesn't exist.
+        """
+        raise NotImplementedError()
+
+    def is_locked(self, key: str) -> bool:
+        """
+        Check if a pytest configuration is locked.
+
+        Args:
+            key (str): tag associated to a pytest configuration.
+
+        Returns:
+            True if configuration is locked. False otherwise.
+
+        Raises:
+            ValueError: if one of the parameters is None or empty.
+            ResourceConnectionError: if connection failed.
+            ResourceNotExistError: if configuration doesn't exist.
+        """
+        raise NotImplementedError()
+
+    def keys(self) -> list:
+        """
+        Fetch the list of available configurations.
+
+        Returns:
+            list(str): a list of strings rapresenting available configurations.
+
+        Raises:
+            ResourceConnectionError: if connection failed.
         """
         raise NotImplementedError()

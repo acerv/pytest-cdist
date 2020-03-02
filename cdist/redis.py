@@ -14,6 +14,7 @@ from cdist import ResourcePushError
 from cdist import ResourcePullError
 from cdist import ResourceLockError
 from cdist import ResourceUnlockError
+from cdist import ResourceNotExistError
 
 
 class RedisExternalResource(ExternalResource):
@@ -29,6 +30,13 @@ class RedisExternalResource(ExternalResource):
         """
         self._hostname = kwargs.get("hostname", "localhost")
         self._port = int(kwargs.get("port", 6379))
+
+    @staticmethod
+    def _lock_name(name):
+        """
+        Return the name used to recognize when a configuration is locked.
+        """
+        return "%s.locking" % name
 
     def _connect(self):
         """
@@ -54,9 +62,11 @@ class RedisExternalResource(ExternalResource):
 
         client = self._connect()
         try:
-            result = client.hmset(key, config)
-            if not result:
-                raise ResourcePushError("cannot push '%s' configuration" % key)
+            client.hmset(key, config)
+            client.set(
+                self._lock_name(key),
+                ""
+            )
         except RedisError as err:
             raise ResourcePushError(err)
 
@@ -79,7 +89,13 @@ class RedisExternalResource(ExternalResource):
 
         client = self._connect()
         try:
-            client.hset(key, "cdist_locked", "1")
+            if key not in client.keys():
+                raise ResourceNotExistError("'%s' config is not defined" % key)
+
+            client.set(
+                self._lock_name(key),
+                "1"
+            )
         except RedisError as err:
             raise ResourceLockError(err)
 
@@ -89,6 +105,38 @@ class RedisExternalResource(ExternalResource):
 
         client = self._connect()
         try:
-            client.hset(key, "cdist_locked", "0")
+            if key not in client.keys():
+                raise ResourceNotExistError("'%s' config is not defined" % key)
+
+            client.set(
+                self._lock_name(key),
+                ""
+            )
         except RedisError as err:
             raise ResourceUnlockError(err)
+
+    def is_locked(self, key: str) -> bool:
+        if not key:
+            raise ValueError("key is empty")
+
+        client = self._connect()
+        try:
+            if key not in client.keys():
+                raise ResourceNotExistError("'%s' config is not defined" % key)
+
+            client.set(
+                self._lock_name(key),
+                ""
+            )
+        except RedisError as err:
+            raise ResourceUnlockError(err)
+
+    def keys(self) -> list:
+        client = self._connect()
+        outdata = list()
+        try:
+            outdata = client.keys()
+        except RedisError as err:
+            raise ResourceConnectionError(err)
+
+        return outdata
