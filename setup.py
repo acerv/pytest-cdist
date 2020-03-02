@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pytest-cdist',
-    version='1.0',
+    version='0.1',
     description='Pytest plugin for distributed pytest configurations',
     author='Andrea Cervesato',
     author_email='andrea.cervesato@mailbox.org',
