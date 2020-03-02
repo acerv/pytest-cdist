@@ -2,6 +2,12 @@
 """
 ExternalResource class implementation for Redis services.
 
+The implemented locking mechanism is the historical way to use a ".locking"
+tag to the configuration key. For example, if a configuration is named
+"myconfig", its locking bit will be defined in the "myconfig.locking" key's
+variable. This is a temporary solution and please give any suggestion if you
+need something more robust.
+
 Author:
     Andrea Cervesato <andrea.cervesato@mailbox.org>
 """
@@ -34,7 +40,7 @@ class RedisExternalResource(ExternalResource):
     @staticmethod
     def _lock_name(name):
         """
-        Return the name used to recognize when a configuration is locked.
+        Return the name used to recognize if a configuration is locked.
         """
         return "%s.locking" % name
 
