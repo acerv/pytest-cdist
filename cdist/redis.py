@@ -2,9 +2,9 @@
 """
 ExternalResource class implementation for Redis services.
 
-The implemented locking mechanism is the historical way to use a ".locking"
+The implemented lock mechanism is the historical way to use a ".lock"
 tag to the configuration key. For example, if a configuration is named
-"myconfig", its locking bit will be defined in the "myconfig.locking" key's
+"myconfig", its lock bit will be defined in the "myconfig.lock" key's
 variable. This is a temporary solution and please give any suggestion if you
 need something more robust.
 
