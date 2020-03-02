@@ -9,13 +9,37 @@ Author:
 
 class ResourceError(Exception):
     """
-    Raised when an external resource doesn't work as expected.
+    Generic error for cdist.
     """
 
 
-class ResourceLockedError(Exception):
+class ResourceConnectionError(ResourceError):
     """
-    Raised when an external resource is locked and it can't be pulled.
+    Raised when an external resource has problems with connection.
+    """
+
+
+class ResourcePushError(ResourceError):
+    """
+    Raised when an external resource got errors while pushing.
+    """
+
+
+class ResourcePullError(ResourceError):
+    """
+    Raised when an external resource got errors while pulling.
+    """
+
+
+class ResourceLockError(ResourceError):
+    """
+    Raised when an external resource got errors while locking.
+    """
+
+
+class ResourceUnlockError(ResourceError):
+    """
+    Raised when an external resource got errors while unlocking.
     """
 
 
@@ -26,7 +50,7 @@ class ExternalResource:
     configurations.
     """
 
-    def push(self, key: str, config: dict) -> bool:
+    def push(self, key: str, config: dict):
         """
         Push a pytest configuration tagging it with a specific key.
 
@@ -34,12 +58,10 @@ class ExternalResource:
             key (str): tag associated to ``config``.
             config (dict): dictionary representing a pytest configuration.
 
-        Returns:
-            bool: True if successful, False otherwise.
-
         Raises:
             ValueError: if one of the parameters is None or empty.
-            ResourceError: if connection failed or pushing failed.
+            ResourceConnectionError: if connection failed.
+            ResourcePushError: if push failed.
         """
         raise NotImplementedError()
 
@@ -55,40 +77,35 @@ class ExternalResource:
 
         Raises:
             ValueError: if one of the parameters is None or empty.
-            ResourceError: if connection failed.
-            ResourceLockedError: if pytest configuration tagged with ``key``
-                is locked.
+            ResourceConnectionError: if connection failed.
+            ResourcePullError: if pull failed.
         """
         raise NotImplementedError()
 
-    def lock(self, key: str) -> bool:
+    def lock(self, key: str):
         """
         Lock a pytest configuration tagged with a specific key.
 
         Args:
             key (str): tag associated to a pytest configuration.
 
-        Returns:
-            bool: True if successful, False otherwise.
-
         Raises:
             ValueError: if one of the parameters is None or empty.
-            ResourceError: if connection failed or locking failed.
+            ResourceConnectionError: if connection failed.
+            ResourceLockError: if lock failed.
         """
         raise NotImplementedError()
 
-    def unlock(self, key: str) -> bool:
+    def unlock(self, key: str):
         """
         Unlock a pytest configuration tagged with a specific key.
 
         Args:
             key (str): tag associated to a pytest configuration.
 
-        Returns:
-            bool: True if successful, False otherwise.
-
         Raises:
             ValueError: if one of the parameters is None or empty.
-            ResourceError: if connection failed or unlocking failed.
+            ResourceConnectionError: if connection failed.
+            ResourceUnlockError: if unlock failed.
         """
         raise NotImplementedError()
