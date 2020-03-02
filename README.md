@@ -3,7 +3,7 @@ TODO
 ====
 
 - [x] client class to read/write pytest configurations
-- [ ] cdist-cli command
+- [x] cdist-cli command
 - [ ] pytest-cdist plugin
 - [x] redis support
 - [ ] redis client username/password support
