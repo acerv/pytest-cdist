@@ -15,12 +15,14 @@ from __future__ import absolute_import
 from redis import Redis
 from redis import RedisError
 from cdist.resource import Resource
+from cdist.resource import ResourceError
 from cdist.resource import ResourceConnectionError
 from cdist.resource import ResourcePushError
 from cdist.resource import ResourcePullError
 from cdist.resource import ResourceLockError
 from cdist.resource import ResourceUnlockError
 from cdist.resource import ResourceNotExistError
+from cdist.resource import ResourceDeleteError
 
 
 class RedisResource(Resource):
@@ -59,6 +61,26 @@ class RedisResource(Resource):
 
         return client
 
+    def _set_status(self, key: str, locked: bool):
+        """
+        Set config locking status.
+        """
+        if not key:
+            raise ValueError("key is empty")
+
+        client = self._connect()
+        try:
+            if key not in client.keys():
+                raise ResourceNotExistError("'%s' config is not defined" % key)
+
+            value = "1" if locked else ""
+            client.set(self._lock_name(key), value)
+        except RedisError as err:
+            if locked:
+                raise ResourceLockError(err)
+            else:
+                raise ResourceUnlockError(err)
+
     def push(self, key: str, config: dict):
         if not key:
             raise ValueError("key is empty")
@@ -86,6 +108,9 @@ class RedisResource(Resource):
         client = self._connect()
         config = None
         try:
+            if key not in client.keys():
+                raise ResourceNotExistError("'%s' config is not defined" % key)
+
             config = client.hgetall(key)
         except RedisError as err:
             raise ResourcePullError(err)
@@ -93,52 +118,26 @@ class RedisResource(Resource):
         return config
 
     def lock(self, key: str):
-        if not key:
-            raise ValueError("key is empty")
-
-        client = self._connect()
-        try:
-            if key not in client.keys():
-                raise ResourceNotExistError("'%s' config is not defined" % key)
-
-            client.set(
-                self._lock_name(key),
-                "1"
-            )
-        except RedisError as err:
-            raise ResourceLockError(err)
+        self._set_status(key, True)
 
     def unlock(self, key: str):
-        if not key:
-            raise ValueError("key is empty")
-
-        client = self._connect()
-        try:
-            if key not in client.keys():
-                raise ResourceNotExistError("'%s' config is not defined" % key)
-
-            client.set(
-                self._lock_name(key),
-                ""
-            )
-        except RedisError as err:
-            raise ResourceUnlockError(err)
+        self._set_status(key, False)
 
     def is_locked(self, key: str) -> bool:
         if not key:
             raise ValueError("key is empty")
 
         client = self._connect()
+        locked = False
         try:
             if key not in client.keys():
                 raise ResourceNotExistError("'%s' config is not defined" % key)
 
-            client.set(
-                self._lock_name(key),
-                ""
-            )
+            locked = client.get(self._lock_name(key))
         except RedisError as err:
-            raise ResourceUnlockError(err)
+            raise ResourceError(err)
+
+        return locked
 
     def keys(self) -> list:
         client = self._connect()
@@ -148,5 +147,24 @@ class RedisResource(Resource):
         except RedisError as err:
             raise ResourceConnectionError(err)
 
-        filtered = [item for item in data if not data.endswith(".lock")]
+        filtered = [item for item in data if not item.endswith(".lock")]
         return filtered
+
+    def delete(self, key: str):
+        if not key:
+            raise ValueError("key is empty")
+
+        client = self._connect()
+        try:
+            if key not in client.keys():
+                raise ResourceNotExistError("'%s' config is not defined" % key)
+
+            client.delete(key)
+        except RedisError as err:
+            raise ResourceDeleteError(err)
+        finally:
+            # always try to delete the locking variable
+            try:
+                client.delete(self._lock_name(key))
+            except RedisError as err:
+                raise ResourceDeleteError(err)

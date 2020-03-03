@@ -50,6 +50,12 @@ class ResourceNotExistError(ResourceError):
     """
 
 
+class ResourceDeleteError(ResourceError):
+    """
+    Raised when an external resource can't delete a requested configuration.
+    """
+
+
 class Resource:
     """
     A generic class to handle multiple pytest configurations via external
@@ -145,5 +151,19 @@ class Resource:
 
         Raises:
             ResourceConnectionError: if connection failed.
+        """
+        raise NotImplementedError()
+
+    def delete(self, key: str):
+        """
+        Delete a pytest configuration.
+
+        Args:
+            key (str): tag associated to a pytest configuration.
+
+        Raises:
+            ValueError: if one of the parameters is None or empty.
+            ResourceConnectionError: if connection failed.
+            ResourceDeleteError: if configuration can't be deleted.
         """
         raise NotImplementedError()
