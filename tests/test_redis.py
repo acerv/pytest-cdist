@@ -30,7 +30,7 @@ def resource(request, mocker):
         mocker.patch('redis.Redis.close')
 
     kwargs = dict(
-        hostname="localhost",
+        hostname="192.168.10.47",
         port="61324"
     )
     resource = RedisResource(**kwargs)
@@ -41,6 +41,9 @@ def test_connection_error(mocker):
     """
     Test if connection raises an error when server is not available.
     """
+    if not MOCKED:
+        pytest.xfail("need mocking")
+
     if MOCKED:
         mocker.patch(
             'redis.Redis.__init__',
@@ -107,7 +110,7 @@ def test_push_error(request, mocker, resource):
 
 def test_pull_error(request, mocker, resource):
     """
-    Test pull method when it raises exceptions.
+    Test pull method when it raises a ResourcePullError error.
 
     Hard to test the behaviour without exceptions inside Redis. This
     test is expected to fail without mocking.
@@ -119,17 +122,38 @@ def test_pull_error(request, mocker, resource):
 
     if MOCKED:
         mocker.patch('redis.Redis.hgetall', side_effect=redis.RedisError())
-        mocker.patch('redis.Redis.keys', return_value=[key])
+        mocker.patch('redis.Redis.exists', return_value=True)
 
     with pytest.raises(ResourcePullError):
         resource.pull(key)
 
     if MOCKED:
+        redis.Redis.hgetall.assert_called_with(key)
+        redis.Redis.exists.assert_called()
+
+
+def test_pull_resource_not_exist_error(request, mocker, resource):
+    """
+    Test pull method when it raises a ResourceNotExistError exception.
+
+    Hard to test the behaviour without exceptions inside Redis. This
+    test is expected to fail without mocking.
+    """
+    if not MOCKED:
+        pytest.xfail("need mocking")
+
+    key = request.node.name
+
+    if MOCKED:
         mocker.patch('redis.Redis.hgetall')
-        mocker.patch('redis.Redis.keys', return_value=[])
+        mocker.patch('redis.Redis.exists', return_value=False)
 
     with pytest.raises(ResourceNotExistError):
         resource.pull(key)
+
+    if MOCKED:
+        redis.Redis.hgetall.assert_not_called()
+        redis.Redis.exists.assert_called()
 
 
 def test_push_and_pull(request, mocker, resource):
@@ -150,6 +174,7 @@ def test_push_and_pull(request, mocker, resource):
         mocker.patch('redis.Redis.get', return_value="")
         mocker.patch('redis.Redis.set')
         mocker.patch('redis.Redis.hgetall', return_value=data)
+        mocker.patch('redis.Redis.exists', return_value=True)
 
     # push data
     resource.push(key, data)
@@ -165,6 +190,7 @@ def test_push_and_pull(request, mocker, resource):
         redis.Redis.keys.assert_called()
         redis.Redis.get.assert_called()
         redis.Redis.hgetall.assert_called_with(key)
+        redis.Redis.exists.assert_called()
 
 
 def test_lock_args_error(resource):
@@ -183,9 +209,9 @@ def test_unlock_args_error(resource):
         resource.unlock(None)
 
 
-def test_lock_error(request, mocker, resource):
+def test_lock_resource_not_exist_error(request, mocker, resource):
     """
-    Test lock method when it raises exceptions.
+    Test lock method when it raises a ResourceNotExistError exception.
 
     Hard to test the behaviour without exceptions inside Redis. This
     test is expected to fail without mocking.
@@ -196,23 +222,44 @@ def test_lock_error(request, mocker, resource):
     key = request.node.name
 
     if MOCKED:
-        mocker.patch('redis.Redis.keys', return_value=[])
+        mocker.patch('redis.Redis.exists', return_value=False)
         mocker.patch('redis.Redis.set')
 
     with pytest.raises(ResourceNotExistError):
         resource.lock(key)
 
     if MOCKED:
-        mocker.patch('redis.Redis.keys', return_value=[key])
+        redis.Redis.set.assert_not_called()
+        redis.Redis.exists.assert_called()
+
+
+def test_lock_error(request, mocker, resource):
+    """
+    Test lock method when it raises a ResourceLockError exceptions.
+
+    Hard to test the behaviour without exceptions inside Redis. This
+    test is expected to fail without mocking.
+    """
+    if not MOCKED:
+        pytest.xfail("need mocking")
+
+    key = request.node.name
+
+    if MOCKED:
+        mocker.patch('redis.Redis.exists', return_value=True)
         mocker.patch('redis.Redis.set', side_effect=redis.RedisError())
 
     with pytest.raises(ResourceLockError):
         resource.lock(key)
 
+    if MOCKED:
+        redis.Redis.set.assert_called()
+        redis.Redis.exists.assert_called()
 
-def test_unlock_error(request, mocker, resource):
+
+def test_unlock_resource_not_exist_error(request, mocker, resource):
     """
-    Test unlock method when it raises exceptions.
+    Test unlock method when it raises a ResourceNotExistError exception.
 
     Hard to test the behaviour without exceptions inside Redis. This
     test is expected to fail without mocking.
@@ -223,23 +270,20 @@ def test_unlock_error(request, mocker, resource):
     key = request.node.name
 
     if MOCKED:
-        mocker.patch('redis.Redis.keys', return_value=[])
+        mocker.patch('redis.Redis.exists', return_value=False)
         mocker.patch('redis.Redis.set')
 
     with pytest.raises(ResourceNotExistError):
         resource.unlock(key)
 
     if MOCKED:
-        mocker.patch('redis.Redis.keys', return_value=[key])
-        mocker.patch('redis.Redis.set', side_effect=redis.RedisError())
-
-    with pytest.raises(ResourceUnlockError):
-        resource.unlock(key)
+        redis.Redis.set.assert_not_called()
+        redis.Redis.exists.assert_called()
 
 
-def test_is_locked_error(request, mocker, resource):
+def test_unlock_error(request, mocker, resource):
     """
-    Test is_locked method when it raises exceptions.
+    Test unlock method when it raises a ResourceUnlockError exception.
 
     Hard to test the behaviour without exceptions inside Redis. This
     test is expected to fail without mocking.
@@ -250,18 +294,63 @@ def test_is_locked_error(request, mocker, resource):
     key = request.node.name
 
     if MOCKED:
-        mocker.patch('redis.Redis.keys', return_value=[])
+        mocker.patch('redis.Redis.exists', return_value=True)
+        mocker.patch('redis.Redis.set', side_effect=redis.RedisError())
+
+    with pytest.raises(ResourceUnlockError):
+        resource.unlock(key)
+
+    if MOCKED:
+        redis.Redis.set.assert_called()
+        redis.Redis.exists.assert_called()
+
+
+def test_is_locked_resource_not_exist_error(request, mocker, resource):
+    """
+    Test is_locked method when it raises a ResourceNotExistError exception.
+
+    Hard to test the behaviour without exceptions inside Redis. This
+    test is expected to fail without mocking.
+    """
+    if not MOCKED:
+        pytest.xfail("need mocking")
+
+    key = request.node.name
+
+    if MOCKED:
+        mocker.patch('redis.Redis.exists', return_value=False)
         mocker.patch('redis.Redis.get')
 
     with pytest.raises(ResourceNotExistError):
         resource.is_locked(key)
 
     if MOCKED:
-        mocker.patch('redis.Redis.keys', return_value=[key])
+        redis.Redis.get.assert_not_called()
+        redis.Redis.exists.assert_called()
+
+
+def test_is_locked_error(request, mocker, resource):
+    """
+    Test is_locked method when it raises a ResourceError exception.
+
+    Hard to test the behaviour without exceptions inside Redis. This
+    test is expected to fail without mocking.
+    """
+    if not MOCKED:
+        pytest.xfail("need mocking")
+
+    key = request.node.name
+
+    if MOCKED:
+        mocker.patch('redis.Redis.exists', return_value=True)
         mocker.patch('redis.Redis.get', side_effect=redis.RedisError())
 
     with pytest.raises(ResourceError):
         resource.is_locked(key)
+
+    if MOCKED:
+        redis.Redis.get.assert_called()
+        redis.Redis.exists.assert_called()
 
 
 def test_keys_error(request, mocker, resource):
@@ -280,6 +369,9 @@ def test_keys_error(request, mocker, resource):
     with pytest.raises(ResourceConnectionError):
         resource.keys()
 
+    if MOCKED:
+        redis.Redis.keys.assert_called()
+
 
 def test_lock_and_unlock(request, mocker, resource):
     """
@@ -287,12 +379,20 @@ def test_lock_and_unlock(request, mocker, resource):
     """
     key = request.node.name
 
+    data = dict(
+        test0="data0",
+        test1="data1",
+        test2="data2"
+    )
+
     if MOCKED:
-        mocker.patch('redis.Redis.keys', return_value=[key])
         mocker.patch('redis.Redis.get', return_value="1")
         mocker.patch('redis.Redis.set')
+        mocker.patch('redis.Redis.hmset')
+        mocker.patch('redis.Redis.exists', return_value=True)
 
     # lock data
+    resource.push(key, data)
     resource.lock(key)
     assert resource.is_locked(key)  # useless without a real case
 
@@ -306,7 +406,7 @@ def test_lock_and_unlock(request, mocker, resource):
     if MOCKED:
         redis.Redis.set.assert_called_with(key + ".lock", "")
         redis.Redis.get.assert_called_with(key + ".lock")
-        redis.Redis.keys.assert_called()
+        redis.Redis.exists.assert_called()
 
 
 def test_delete_args_error(resource):
@@ -332,9 +432,14 @@ def test_delete_error(request, mocker, resource):
     if MOCKED:
         mocker.patch('redis.Redis.delete', side_effect=redis.RedisError())
         mocker.patch('redis.Redis.keys', return_value=[key])
+        mocker.patch('redis.Redis.exists', return_value=True)
 
     with pytest.raises(ResourceDeleteError):
         resource.delete(key)
+
+    if MOCKED:
+        redis.Redis.delete.assert_called()
+        redis.Redis.exists.assert_called()
 
 
 def test_push_and_delete(request, mocker, resource):
@@ -354,6 +459,7 @@ def test_push_and_delete(request, mocker, resource):
         mocker.patch('redis.Redis.keys', return_value=[key])
         mocker.patch('redis.Redis.set')
         mocker.patch('redis.Redis.delete')
+        mocker.patch('redis.Redis.exists', return_value=True)
 
     # push data
     resource.push(key, data)
@@ -372,3 +478,4 @@ def test_push_and_delete(request, mocker, resource):
         redis.Redis.keys.assert_called()
         redis.Redis.set.assert_called()
         redis.Redis.delete.assert_called()
+        redis.Redis.exists.assert_called()

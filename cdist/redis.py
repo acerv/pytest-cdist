@@ -12,6 +12,7 @@ Author:
     Andrea Cervesato <andrea.cervesato@mailbox.org>
 """
 from __future__ import absolute_import
+import six
 from redis import Redis
 from redis import RedisError
 from cdist.resource import Resource
@@ -54,7 +55,8 @@ class RedisResource(Resource):
         try:
             client = Redis(
                 host=self._hostname,
-                port=self._port
+                port=self._port,
+                decode_responses=True
             )
         except RedisError as err:
             raise ResourceConnectionError(err)
@@ -70,7 +72,7 @@ class RedisResource(Resource):
 
         client = self._connect()
         try:
-            if key not in client.keys():
+            if not client.exists(key):
                 raise ResourceNotExistError("'%s' config is not defined" % key)
 
             value = "1" if locked else ""
@@ -108,7 +110,7 @@ class RedisResource(Resource):
         client = self._connect()
         config = None
         try:
-            if key not in client.keys():
+            if not client.exists(key):
                 raise ResourceNotExistError("'%s' config is not defined" % key)
 
             config = client.hgetall(key)
@@ -130,7 +132,7 @@ class RedisResource(Resource):
         client = self._connect()
         locked = False
         try:
-            if key not in client.keys():
+            if not client.exists(key):
                 raise ResourceNotExistError("'%s' config is not defined" % key)
 
             locked = client.get(self._lock_name(key))
@@ -156,7 +158,7 @@ class RedisResource(Resource):
 
         client = self._connect()
         try:
-            if key not in client.keys():
+            if not client.exists(key):
                 raise ResourceNotExistError("'%s' config is not defined" % key)
 
             client.delete(key)
@@ -165,6 +167,8 @@ class RedisResource(Resource):
         finally:
             # always try to delete the locking variable
             try:
-                client.delete(self._lock_name(key))
+                lock_name = self._lock_name(key)
+                if client.exists(lock_name):
+                    client.delete(lock_name)
             except RedisError as err:
                 raise ResourceDeleteError(err)
