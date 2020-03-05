@@ -8,8 +8,8 @@ Author:
 import sys
 import configparser
 import click
-import cdist
-from cdist.resource import ResourceError
+from cdist import RedisResource
+from cdist import ResourceError
 
 
 class Arguments:
@@ -36,11 +36,6 @@ def print_error(msg):
 
 @click.group()
 @click.option(
-    '--rtype',
-    '-t',
-    default="redis",
-    help="type of distributed resource (default: redis)")
-@click.option(
     '--hostname',
     '-h',
     default="localhost",
@@ -52,7 +47,7 @@ def print_error(msg):
     type=click.INT,
     help="port of the resource server (default: 6379)")
 @pass_arguments
-def cli(args, hostname, port, rtype):
+def cli(args, hostname, port):
     """
     cdist client for pytest distributed configuration.
     """
@@ -60,11 +55,7 @@ def cli(args, hostname, port, rtype):
         hostname=hostname,
         port=port
     )
-    args.resource = cdist.get_resource(rtype, **kwargs)
-
-    if not rtype:
-        print_error("ERROR: '%s' type not supported (yet)." % rtype)
-        return
+    args.resource = RedisResource(**kwargs)
 
 
 @cli.command()
@@ -136,7 +127,7 @@ def lock(args, config_name):
 
     try:
         args.resource.lock(config_name)
-    except RecursionError as err:
+    except ResourceError as err:
         print_error("ERROR: %s." % err)
 
 
@@ -158,5 +149,5 @@ def unlock(args, config_name):
 
     try:
         args.resource.unlock(config_name)
-    except RecursionError as err:
+    except ResourceError as err:
         print_error("ERROR: %s." % err)
