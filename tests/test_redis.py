@@ -305,6 +305,14 @@ def test_unlock_error(request, mocker, resource):
         redis.Redis.exists.assert_called()
 
 
+def test_is_locked_args_error(resource):
+    """
+    Test is_locked method arguments when they are not valid.
+    """
+    with pytest.raises(ValueError):
+        resource.is_locked(None)
+
+
 def test_is_locked_resource_not_exist_error(request, mocker, resource):
     """
     Test is_locked method when it raises a ResourceNotExistError exception.
@@ -417,9 +425,33 @@ def test_delete_args_error(resource):
         resource.delete(None)
 
 
+def test_delete_resource_not_exist_error(request, mocker, resource):
+    """
+    Test delete method when it raises a ResourceNotExistError exception.
+
+    Hard to test the behaviour without exceptions inside Redis. This
+    test is expected to fail without mocking.
+    """
+    if not MOCKED:
+        pytest.xfail("need mocking")
+
+    key = request.node.name
+
+    if MOCKED:
+        mocker.patch('redis.Redis.delete')
+        mocker.patch('redis.Redis.exists', return_value=False)
+
+    with pytest.raises(ResourceNotExistError):
+        resource.delete(key)
+
+    if MOCKED:
+        redis.Redis.delete.assert_not_called()
+        redis.Redis.exists.assert_called()
+
+
 def test_delete_error(request, mocker, resource):
     """
-    Test delete method when it raises exceptions.
+    Test delete method when it raises a ResourceDeleteError exception.
 
     Hard to test the behaviour without exceptions inside Redis. This
     test is expected to fail without mocking.
@@ -431,7 +463,6 @@ def test_delete_error(request, mocker, resource):
 
     if MOCKED:
         mocker.patch('redis.Redis.delete', side_effect=redis.RedisError())
-        mocker.patch('redis.Redis.keys', return_value=[key])
         mocker.patch('redis.Redis.exists', return_value=True)
 
     with pytest.raises(ResourceDeleteError):
