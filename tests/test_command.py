@@ -23,7 +23,7 @@ def runner(mocker):
 
     runner = CliRunner()
     with runner.isolated_filesystem():
-        def _callback(cmd, hostname="192.168.10.47", port="61324"):
+        def _callback(cmd, hostname="localhost", port="61324"):
             ret = runner.invoke(cdist.command.cli, [
                 "-h",
                 hostname,
