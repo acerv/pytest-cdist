@@ -5,12 +5,12 @@ setuptools script.
 Author:
     Andrea Cervesato <andrea.cervesato@mailbox.org>
 """
-
 from setuptools import setup, find_packages
+from cdist import __version__
 
 setup(
     name='pytest-cdist',
-    version='0.1',
+    version=__version__,
     description='Pytest plugin for distributed pytest configurations',
     author='Andrea Cervesato',
     author_email='andrea.cervesato@mailbox.org',
@@ -35,11 +35,14 @@ setup(
     install_requires=[
         'click<=7.0',
         'colorama<=0.4.3',
-        'redis<=3.4.1'
+        'redis<=3.4.1',
     ],
     entry_points={
         'console_scripts': [
             'cdist-cli=cdist.command:cli',
         ],
+        'pytest11': [
+            'cdist = cdist.plugin',
+        ]
     },
 )
