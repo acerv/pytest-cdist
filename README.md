@@ -9,3 +9,4 @@ TODO
 - [ ] redis client username/password support
 - [ ] redis client ssl keyfile support
 - [ ] "locked by" mechanism
+- [ ] better locking mechanism
