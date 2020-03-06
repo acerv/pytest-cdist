@@ -30,7 +30,7 @@ def resource(request, mocker):
         mocker.patch('redis.Redis.close')
 
     kwargs = dict(
-        hostname="192.168.10.47",
+        hostname="localhost",
         port="61324"
     )
     resource = RedisResource(**kwargs)

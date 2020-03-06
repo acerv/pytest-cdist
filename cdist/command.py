@@ -43,7 +43,7 @@ def print_error(msg):
 @click.option(
     '--port',
     '-p',
-    default="6379",
+    default="61324",
     type=click.INT,
     help="port of the resource server (default: 6379)")
 @pass_arguments
@@ -59,23 +59,32 @@ def cli(args, hostname, port):
 
 
 @cli.command()
-@click.argument("config_name", nargs=1)
-@click.argument("config_file", nargs=1)
+@click.argument("config_name")
+@click.argument("config_file")
 @pass_arguments
 def push(args, config_name, config_file):
     """
     push a new configuration.
     """
     config = configparser.ConfigParser()
-    config.read(config_file)
+    try:
+        config.read(config_file)
+    except configparser.Error as err:
+        print_error("ERROR: %s" % str(err))
 
     if 'pytest' not in config.sections():
         print_error("ERROR: not a pytest configuration.")
 
-    click.echo("pushing '%s': ", nl=False)
+    click.echo("pushing '%s': " % config_name, nl=False)
 
+    # pytest section to dict
+    pytest_dict = dict()
+    for option in config.options('pytest'):
+        pytest_dict[option] = config.get('pytest', option)
+
+    # push pytest configuration
     try:
-        args.resource.push(config_name, config['pytest'])
+        args.resource.push(config_name, pytest_dict)
     except ResourceError as err:
         print_error("ERROR: %s." % str(err))
 
@@ -83,7 +92,7 @@ def push(args, config_name, config_file):
 
 
 @cli.command()
-@click.argument("config_name", nargs=1)
+@click.argument("config_name")
 @pass_arguments
 def show(args, config_name):
     """
@@ -110,7 +119,7 @@ def show(args, config_name):
 
 
 @cli.command()
-@click.argument("config_name", nargs=1)
+@click.argument("config_name")
 @pass_arguments
 def lock(args, config_name):
     """
@@ -132,7 +141,7 @@ def lock(args, config_name):
 
 
 @cli.command()
-@click.argument("config_name", nargs=1)
+@click.argument("config_name")
 @pass_arguments
 def unlock(args, config_name):
     """
@@ -149,5 +158,56 @@ def unlock(args, config_name):
 
     try:
         args.resource.unlock(config_name)
+    except ResourceError as err:
+        print_error("ERROR: %s." % err)
+
+
+@cli.command(name="list")
+@pass_arguments
+def _list(args):
+    """
+    list all saved configurations.
+    """
+    keys = list()
+    try:
+        keys = args.resource.keys()
+    except ResourceError as err:
+        print_error("ERROR: %s." % str(err))
+
+    click.echo("Available configurations:")
+    if not keys:
+        click.echo("- No configurations.")
+        return
+
+    try:
+        for key in keys:
+            click.echo("- %s: " % key, nl=False)
+
+            if args.resource.is_locked(key):
+                click.secho("Locked", fg="red")
+            else:
+                click.secho("Not locked", fg="green")
+    except ResourceError as err:
+        print_error("ERROR: %s." % err)
+
+
+@cli.command()
+@click.argument("config_name")
+@pass_arguments
+def delete(args, config_name):
+    """
+    delete a configuration.
+    """
+    keys = list()
+    try:
+        keys = args.resource.keys()
+    except ResourceError as err:
+        print_error("ERROR: %s." % str(err))
+
+    if config_name not in keys:
+        print_error("ERROR: can't find the requested configuration.")
+
+    try:
+        args.resource.delete(config_name)
     except ResourceError as err:
         print_error("ERROR: %s." % err)
