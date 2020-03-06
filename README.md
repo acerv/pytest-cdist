@@ -10,3 +10,4 @@ TODO
 - [ ] redis client ssl keyfile support
 - [ ] "locked by" mechanism
 - [ ] better locking mechanism
+- [ ] locking timeout
