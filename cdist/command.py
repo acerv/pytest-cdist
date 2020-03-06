@@ -26,15 +26,19 @@ class Arguments:
 pass_arguments = click.make_pass_decorator(Arguments, ensure=True)
 
 
-def print_error(msg):
+class CatchAllExceptions(click.Group):
     """
-    print error message and exit.
+    Class created to catch all exceptions coming from the application.
     """
-    click.secho(msg, err=True, fg="red")
-    sys.exit(1)
+
+    def __call__(self, *args, **kwargs):
+        try:
+            return self.main(*args, **kwargs)
+        except Exception as exc:
+            click.secho(str(exc), fg="red")
 
 
-@click.group()
+@click.group(cls=CatchAllExceptions)
 @click.option(
     '--hostname',
     '-h',
@@ -67,13 +71,10 @@ def push(args, config_name, config_file):
     push a new configuration.
     """
     config = configparser.ConfigParser()
-    try:
-        config.read(config_file)
-    except configparser.Error as err:
-        print_error("ERROR: %s" % str(err))
+    config.read(config_file)
 
     if 'pytest' not in config.sections():
-        print_error("ERROR: not a pytest configuration.")
+        raise ResourceError("not a pytest configuration.")
 
     click.echo("pushing '%s': " % config_name, nl=False)
 
@@ -83,10 +84,7 @@ def push(args, config_name, config_file):
         pytest_dict[option] = config.get('pytest', option)
 
     # push pytest configuration
-    try:
-        args.resource.push(config_name, pytest_dict)
-    except ResourceError as err:
-        print_error("ERROR: %s." % str(err))
+    args.resource.push(config_name, pytest_dict)
 
     click.secho("done", fg="green")
 
@@ -98,20 +96,7 @@ def show(args, config_name):
     """
     show a configuration.
     """
-    keys = list()
-    try:
-        keys = args.resource.keys()
-    except ResourceError as err:
-        print_error("ERROR: %s." % str(err))
-
-    if config_name not in keys:
-        print_error("ERROR: can't find the requested configuration.")
-
-    config = None
-    try:
-        config = args.resource.pull(config_name)
-    except ResourceError as err:
-        print_error("ERROR: %s." % str(err))
+    config = args.resource.pull(config_name)
 
     click.echo("\n[pytest]")
     for key, value in config.items():
@@ -125,19 +110,7 @@ def lock(args, config_name):
     """
     lock a configuration.
     """
-    keys = list()
-    try:
-        keys = args.resource.keys()
-    except ResourceError as err:
-        print_error("ERROR: %s." % str(err))
-
-    if config_name not in keys:
-        print_error("ERROR: can't find the requested configuration.")
-
-    try:
-        args.resource.lock(config_name)
-    except ResourceError as err:
-        print_error("ERROR: %s." % err)
+    args.resource.lock(config_name)
 
 
 @cli.command()
@@ -147,19 +120,7 @@ def unlock(args, config_name):
     """
     unlock a configuration.
     """
-    keys = list()
-    try:
-        keys = args.resource.keys()
-    except ResourceError as err:
-        print_error("ERROR: %s." % str(err))
-
-    if config_name not in keys:
-        print_error("ERROR: can't find the requested configuration.")
-
-    try:
-        args.resource.unlock(config_name)
-    except ResourceError as err:
-        print_error("ERROR: %s." % err)
+    args.resource.unlock(config_name)
 
 
 @cli.command(name="list")
@@ -168,27 +129,20 @@ def _list(args):
     """
     list all saved configurations.
     """
-    keys = list()
-    try:
-        keys = args.resource.keys()
-    except ResourceError as err:
-        print_error("ERROR: %s." % str(err))
+    keys = args.resource.keys()
 
     click.echo("Available configurations:")
     if not keys:
         click.echo("- No configurations.")
         return
 
-    try:
-        for key in keys:
-            click.echo("- %s: " % key, nl=False)
+    for key in keys:
+        click.echo("- %s: " % key, nl=False)
 
-            if args.resource.is_locked(key):
-                click.secho("Locked", fg="red")
-            else:
-                click.secho("Not locked", fg="green")
-    except ResourceError as err:
-        print_error("ERROR: %s." % err)
+        if args.resource.is_locked(key):
+            click.secho("Locked", fg="red")
+        else:
+            click.secho("Not locked", fg="green")
 
 
 @cli.command()
@@ -198,16 +152,4 @@ def delete(args, config_name):
     """
     delete a configuration.
     """
-    keys = list()
-    try:
-        keys = args.resource.keys()
-    except ResourceError as err:
-        print_error("ERROR: %s." % str(err))
-
-    if config_name not in keys:
-        print_error("ERROR: can't find the requested configuration.")
-
-    try:
-        args.resource.delete(config_name)
-    except ResourceError as err:
-        print_error("ERROR: %s." % err)
+    args.resource.delete(config_name)
