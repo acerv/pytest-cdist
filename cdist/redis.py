@@ -12,7 +12,6 @@ Author:
     Andrea Cervesato <andrea.cervesato@mailbox.org>
 """
 from __future__ import absolute_import
-import six
 from redis import Redis
 from redis import RedisError
 from cdist.resource import Resource

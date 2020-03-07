@@ -5,8 +5,10 @@ cdist-plugin implementation.
 Author:
     Andrea Cervesato <andrea.cervesato@mailbox.org>
 """
+import pytest
 from cdist import __version__
 from cdist import RedisResource
+from cdist import ResourceError
 
 
 def pytest_addoption(parser):
@@ -15,8 +17,8 @@ def pytest_addoption(parser):
     """
     parser.addini(
         "cdist_hostname",
-        "cdist resource hostname (default: redis)",
-        default="redis"
+        "cdist resource hostname (default: localhost)",
+        default="localhost"
     )
     parser.addini(
         "cdist_port",
@@ -89,12 +91,15 @@ class Plugin:
         autolock = self._get_autolock(session.config)
 
         # create client
-        self._client = RedisResource(hostname=hostname, port=int(port))
-        if autolock:
-            self._client.lock(config_name)
+        try:
+            self._client = RedisResource(hostname=hostname, port=int(port))
+            if autolock:
+                self._client.lock(config_name)
 
-        # pull configuration
-        config = self._client.pull(config_name)
+            # pull configuration
+            config = self._client.pull(config_name)
+        except ResourceError as err:
+            raise pytest.UsageError(err)
 
         # update pytest configuration
         for key, value in config.items():
