@@ -31,6 +31,7 @@ setup(
         'Topic :: Software Development :: Testing',
         'Topic :: Utilities',
     ],
+    packages=["cdist"],
     python_version=">3.4,<3.9",
     install_requires=[
         'click<=7.0',

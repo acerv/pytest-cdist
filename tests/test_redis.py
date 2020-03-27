@@ -4,7 +4,7 @@ redis module tests.
 import os
 import redis
 import pytest
-from cdist import RedisResource
+from cdist.redis import RedisResource
 from cdist import ResourceError
 from cdist import ResourceConnectionError
 from cdist import ResourcePushError

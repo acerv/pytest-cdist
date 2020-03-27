@@ -8,8 +8,8 @@ Author:
 import sys
 import configparser
 import click
-from cdist import RedisResource
-from cdist import ResourceError
+from cdist.redis import RedisResource
+from cdist.resource import ResourceError
 
 
 class Arguments:

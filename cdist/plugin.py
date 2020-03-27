@@ -7,8 +7,8 @@ Author:
 """
 import pytest
 from cdist import __version__
-from cdist import RedisResource
-from cdist import ResourceError
+from cdist.redis import RedisResource
+from cdist.resource import ResourceError
 
 
 def pytest_addoption(parser):

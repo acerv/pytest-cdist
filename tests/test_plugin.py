@@ -32,10 +32,10 @@ def _setup(testdir, mocker):
         test_param1="full",
     )
 
-    mocker.patch('cdist.RedisResource.__init__', return_value=None)
-    mocker.patch("cdist.RedisResource.pull", return_value=config_dict)
-    mocker.patch("cdist.RedisResource.lock")
-    mocker.patch("cdist.RedisResource.unlock")
+    mocker.patch('cdist.redis.RedisResource.__init__', return_value=None)
+    mocker.patch("cdist.redis.RedisResource.pull", return_value=config_dict)
+    mocker.patch("cdist.redis.RedisResource.lock")
+    mocker.patch("cdist.redis.RedisResource.unlock")
 
 
 def test_pull_config(testdir, mocker):
@@ -52,9 +52,9 @@ def test_pull_config(testdir, mocker):
     result = testdir.runpytest("--cdist-config=test")
     result.assert_outcomes(passed=1)
 
-    cdist.RedisResource.pull.assert_called_with("test")
-    cdist.RedisResource.lock.assert_called_with("test")
-    cdist.RedisResource.unlock.assert_called_with("test")
+    cdist.redis.RedisResource.pull.assert_called_with("test")
+    cdist.redis.RedisResource.lock.assert_called_with("test")
+    cdist.redis.RedisResource.unlock.assert_called_with("test")
 
 
 def test_parameters(testdir, mocker):
@@ -71,8 +71,8 @@ def test_parameters(testdir, mocker):
 
     result = testdir.runpytest("--cdist-config=test")
 
-    cdist.RedisResource.__init__.assert_called_with(
+    cdist.redis.RedisResource.__init__.assert_called_with(
         hostname="192.168.1.1", port=2244)
-    cdist.RedisResource.pull.assert_called_with("test")
-    cdist.RedisResource.lock.assert_not_called()
-    cdist.RedisResource.unlock.assert_not_called()
+    cdist.redis.RedisResource.pull.assert_called_with("test")
+    cdist.redis.RedisResource.lock.assert_not_called()
+    cdist.redis.RedisResource.unlock.assert_not_called()

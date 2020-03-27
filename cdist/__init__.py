@@ -13,7 +13,6 @@ from cdist.resource import ResourceLockError
 from cdist.resource import ResourceUnlockError
 from cdist.resource import ResourceNotExistError
 from cdist.resource import ResourceDeleteError
-from cdist.redis import RedisResource
 
 __version__ = "0.1"
 
@@ -27,5 +26,4 @@ __all__ = [
     "ResourceUnlockError",
     "ResourceNotExistError",
     "ResourceDeleteError",
-    "RedisResource"
 ]

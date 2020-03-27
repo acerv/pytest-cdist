@@ -4,7 +4,7 @@ command module tests.
 import os
 import pytest
 from click.testing import CliRunner
-import cdist
+import cdist.redis
 import cdist.command
 import redis
 
@@ -19,7 +19,7 @@ def runner(mocker):
     Click runner client.
     """
     if MOCKED:
-        mocker.patch('cdist.RedisResource.__init__', return_value=None)
+        mocker.patch('cdist.redis.RedisResource.__init__', return_value=None)
 
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -89,7 +89,7 @@ def test_push_error(request, mocker, runner):
     config_dict = dict(addopts="--setup-only")
 
     if MOCKED:
-        mocker.patch("cdist.RedisResource.push",
+        mocker.patch("cdist.redis.RedisResource.push",
                      side_effect=cdist.ResourceError())
 
     # push configuration file
@@ -98,7 +98,7 @@ def test_push_error(request, mocker, runner):
     assert ret.exit_code == 1
 
     if MOCKED:
-        cdist.RedisResource.push.assert_called_with(key, config_dict)
+        cdist.redis.RedisResource.push.assert_called_with(key, config_dict)
 
 
 def test_show_config_not_exist_error(request, runner):
@@ -127,7 +127,7 @@ def test_show_error(request, mocker, runner):
         config.write("[pytest]\naddopts = --setup-only")
 
     if MOCKED:
-        mocker.patch("cdist.RedisResource.pull",
+        mocker.patch("cdist.redis.RedisResource.pull",
                      side_effect=cdist.ResourceError())
 
     # push configuration file
@@ -136,7 +136,7 @@ def test_show_error(request, mocker, runner):
     assert ret.exit_code == 1
 
     if MOCKED:
-        cdist.RedisResource.pull.assert_called_with(key)
+        cdist.redis.RedisResource.pull.assert_called_with(key)
 
 
 def test_push_and_show(request, mocker, runner):
@@ -151,8 +151,8 @@ def test_push_and_show(request, mocker, runner):
     config_dict = dict(addopts="--setup-only")
 
     if MOCKED:
-        mocker.patch("cdist.RedisResource.push")
-        mocker.patch("cdist.RedisResource.pull", return_value=config_dict)
+        mocker.patch("cdist.redis.RedisResource.push")
+        mocker.patch("cdist.redis.RedisResource.pull", return_value=config_dict)
 
     # push configuration file
     ret = runner(['push', key, 'pytest.ini'])
@@ -165,8 +165,8 @@ def test_push_and_show(request, mocker, runner):
     assert ret.exit_code == 0
 
     if MOCKED:
-        cdist.RedisResource.push.assert_called_with(key, config_dict)
-        cdist.RedisResource.pull.assert_called_with(key)
+        cdist.redis.RedisResource.push.assert_called_with(key, config_dict)
+        cdist.redis.RedisResource.pull.assert_called_with(key)
 
 
 def test_lock_config_not_exist_error(request, runner):
@@ -195,7 +195,7 @@ def test_lock_error(request, mocker, runner):
         config.write("[pytest]\naddopts = --setup-only")
 
     if MOCKED:
-        mocker.patch("cdist.RedisResource.lock",
+        mocker.patch("cdist.redis.RedisResource.lock",
                      side_effect=cdist.ResourceError())
 
     # push configuration file
@@ -204,7 +204,7 @@ def test_lock_error(request, mocker, runner):
     assert ret.exit_code == 1
 
     if MOCKED:
-        cdist.RedisResource.lock.assert_called_with(key)
+        cdist.redis.RedisResource.lock.assert_called_with(key)
 
 
 def test_unlock_config_not_exist_error(request, runner):
@@ -233,7 +233,7 @@ def test_unlock_error(request, mocker, runner):
         config.write("[pytest]\naddopts = --setup-only")
 
     if MOCKED:
-        mocker.patch("cdist.RedisResource.unlock",
+        mocker.patch("cdist.redis.RedisResource.unlock",
                      side_effect=cdist.ResourceError())
 
     # push configuration file
@@ -242,7 +242,7 @@ def test_unlock_error(request, mocker, runner):
     assert ret.exit_code == 1
 
     if MOCKED:
-        cdist.RedisResource.unlock.assert_called_with(key)
+        cdist.redis.RedisResource.unlock.assert_called_with(key)
 
 
 def test_lock_and_unlock(request, mocker, runner):
@@ -257,9 +257,9 @@ def test_lock_and_unlock(request, mocker, runner):
     config_dict = dict(addopts="--setup-only")
 
     if MOCKED:
-        mocker.patch("cdist.RedisResource.push")
-        mocker.patch("cdist.RedisResource.lock")
-        mocker.patch("cdist.RedisResource.unlock")
+        mocker.patch("cdist.redis.RedisResource.push")
+        mocker.patch("cdist.redis.RedisResource.lock")
+        mocker.patch("cdist.redis.RedisResource.unlock")
 
     # push configuration file
     ret = runner(['push', key, 'pytest.ini'])
@@ -277,9 +277,9 @@ def test_lock_and_unlock(request, mocker, runner):
     assert ret.exit_code == 0
 
     if MOCKED:
-        cdist.RedisResource.push.assert_called_with(key, config_dict)
-        cdist.RedisResource.lock.assert_called_with(key)
-        cdist.RedisResource.unlock.assert_called_with(key)
+        cdist.redis.RedisResource.push.assert_called_with(key, config_dict)
+        cdist.redis.RedisResource.lock.assert_called_with(key)
+        cdist.redis.RedisResource.unlock.assert_called_with(key)
 
 
 def test_list_error(request, mocker, runner):
@@ -295,7 +295,7 @@ def test_list_error(request, mocker, runner):
         config.write("[pytest]\naddopts = --setup-only")
 
     if MOCKED:
-        mocker.patch("cdist.RedisResource.keys",
+        mocker.patch("cdist.redis.RedisResource.keys",
                      side_effect=cdist.ResourceError())
 
     # list configurations
@@ -304,7 +304,7 @@ def test_list_error(request, mocker, runner):
     assert ret.exit_code == 1
 
     if MOCKED:
-        cdist.RedisResource.keys.assert_called_with()
+        cdist.redis.RedisResource.keys.assert_called_with()
 
 
 def test_list_locked_check_error(request, mocker, runner):
@@ -323,9 +323,9 @@ def test_list_locked_check_error(request, mocker, runner):
     config_dict = dict(addopts="--setup-only")
 
     if MOCKED:
-        mocker.patch("cdist.RedisResource.push")
-        mocker.patch("cdist.RedisResource.keys", return_value=[key])
-        mocker.patch("cdist.RedisResource.is_locked",
+        mocker.patch("cdist.redis.RedisResource.push")
+        mocker.patch("cdist.redis.RedisResource.keys", return_value=[key])
+        mocker.patch("cdist.redis.RedisResource.is_locked",
                      side_effect=cdist.ResourceError())
 
     # push configuration file
@@ -339,9 +339,9 @@ def test_list_locked_check_error(request, mocker, runner):
     assert ret.exit_code == 1
 
     if MOCKED:
-        cdist.RedisResource.push.assert_called_with(key, config_dict)
-        cdist.RedisResource.is_locked.assert_called_with(key)
-        cdist.RedisResource.keys.assert_called()
+        cdist.redis.RedisResource.push.assert_called_with(key, config_dict)
+        cdist.redis.RedisResource.is_locked.assert_called_with(key)
+        cdist.redis.RedisResource.keys.assert_called()
 
 
 def test_push_and_list(request, mocker, runner):
@@ -359,9 +359,9 @@ def test_push_and_list(request, mocker, runner):
     config_dict = dict(addopts="--setup-only")
 
     if MOCKED:
-        mocker.patch("cdist.RedisResource.push")
-        mocker.patch("cdist.RedisResource.keys", return_value=[key])
-        mocker.patch("cdist.RedisResource.is_locked", return_value=False)
+        mocker.patch("cdist.redis.RedisResource.push")
+        mocker.patch("cdist.redis.RedisResource.keys", return_value=[key])
+        mocker.patch("cdist.redis.RedisResource.is_locked", return_value=False)
 
     # push configuration file
     ret = runner(['push', key, 'pytest.ini'])
@@ -375,9 +375,9 @@ def test_push_and_list(request, mocker, runner):
     assert key in ret.output
 
     if MOCKED:
-        cdist.RedisResource.push.assert_called_with(key, config_dict)
-        cdist.RedisResource.keys.assert_called()
-        cdist.RedisResource.is_locked.assert_called_with(key)
+        cdist.redis.RedisResource.push.assert_called_with(key, config_dict)
+        cdist.redis.RedisResource.keys.assert_called()
+        cdist.redis.RedisResource.is_locked.assert_called_with(key)
 
 
 def test_delete_config_not_exist_error(request, runner):
@@ -406,7 +406,7 @@ def test_delete_error(request, mocker, runner):
         config.write("[pytest]\naddopts = --setup-only")
 
     if MOCKED:
-        mocker.patch("cdist.RedisResource.delete",
+        mocker.patch("cdist.redis.RedisResource.delete",
                      side_effect=cdist.ResourceError())
 
     # push configuration file
@@ -415,7 +415,7 @@ def test_delete_error(request, mocker, runner):
     assert ret.exit_code == 1
 
     if MOCKED:
-        cdist.RedisResource.delete.assert_called_with(key)
+        cdist.redis.RedisResource.delete.assert_called_with(key)
 
 
 def test_push_and_delete(request, mocker, runner):
@@ -430,8 +430,8 @@ def test_push_and_delete(request, mocker, runner):
     config_dict = dict(addopts="--setup-only")
 
     if MOCKED:
-        mocker.patch("cdist.RedisResource.push")
-        mocker.patch("cdist.RedisResource.delete")
+        mocker.patch("cdist.redis.RedisResource.push")
+        mocker.patch("cdist.redis.RedisResource.delete")
 
     # push configuration file
     ret = runner(['push', key, 'pytest.ini'])
@@ -444,5 +444,5 @@ def test_push_and_delete(request, mocker, runner):
     assert ret.exit_code == 0
 
     if MOCKED:
-        cdist.RedisResource.push.assert_called_with(key, config_dict)
-        cdist.RedisResource.delete.assert_called_with(key)
+        cdist.redis.RedisResource.push.assert_called_with(key, config_dict)
+        cdist.redis.RedisResource.delete.assert_called_with(key)
